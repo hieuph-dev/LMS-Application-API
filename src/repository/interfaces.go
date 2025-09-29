@@ -49,3 +49,9 @@ type ReviewRepository interface {
 	GetCourseReviews(courseId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Review, int, error)
 	GetCourseReviewStats(courseId uint) (*dto.ReviewStats, error)
 }
+
+type LessonRepository interface {
+	GetCourseLessons(courseId uint) ([]models.Lesson, error)
+	CheckUserEnrollment(userId, courseId uint) (bool, error)
+	GetLessonProgress(userId uint, lessonIds []uint) (map[uint]bool, error)
+}
