@@ -55,3 +55,22 @@ type LessonRepository interface {
 	CheckUserEnrollment(userId, courseId uint) (bool, error)
 	GetLessonProgress(userId uint, lessonIds []uint) (map[uint]bool, error)
 }
+
+type CouponRepository interface {
+	FindByCode(code string) (*models.Coupon, error)
+	IncrementUsedCount(couponId uint) error
+	IsValidCoupon(coupon *models.Coupon) bool
+}
+
+type OrderRepository interface {
+	Create(order *models.Order) error
+	FindByOrderCode(orderCode string) (*models.Order, error)
+	UpdatePaymentStatus(orderId uint, status string) error
+}
+
+type EnrollmentRepository interface {
+	Create(enrollment *models.Enrollment) error
+	CheckEnrollment(userId, courseId uint) (*models.Enrollment, bool)
+	GetUserEnrollments(userId uint, offset, limit int, filters map[string]interface{}) ([]models.Enrollment, int, error)
+	CompleteEnrollment(enrollmentId uint) error
+}

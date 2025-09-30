@@ -63,6 +63,8 @@ func InitDB() error {
 		&models.Enrollment{},
 		&models.Progress{},
 		&models.Review{},
+		&models.Coupon{},
+		&models.Order{},
 	)
 
 	if err != nil {

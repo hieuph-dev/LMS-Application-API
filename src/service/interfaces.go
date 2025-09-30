@@ -57,3 +57,9 @@ type ReviewService interface {
 type LessonService interface {
 	GetCourseLessons(userId, courseId uint) (*dto.GetCourseLessonsResponse, error)
 }
+
+type EnrollmentService interface {
+	EnrollCourse(userId, courseId uint, req *dto.EnrollCourseRequest) (*dto.EnrollCourseResponse, error)
+	CheckEnrollment(userId, courseId uint) (*dto.CheckEnrollmentResponse, error)
+	GetMyEnrollments(userId uint, req *dto.GetMyEnrollmentsQueryRequest) (*dto.GetMyEnrollmentsResponse, error)
+}
