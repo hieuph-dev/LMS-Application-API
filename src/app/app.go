@@ -47,6 +47,7 @@ func NewApplication(cfg *config.ServerConfig) *Application {
 		NewCourseModule(),
 		NewLessonModule(),
 		NewEnrollmentModule(),
+		NewInstructorModule(),
 	}
 
 	// Đăng ký routes cho tất cả modules

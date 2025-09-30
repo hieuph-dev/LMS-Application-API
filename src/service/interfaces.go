@@ -63,3 +63,10 @@ type EnrollmentService interface {
 	CheckEnrollment(userId, courseId uint) (*dto.CheckEnrollmentResponse, error)
 	GetMyEnrollments(userId uint, req *dto.GetMyEnrollmentsQueryRequest) (*dto.GetMyEnrollmentsResponse, error)
 }
+
+type InstructorService interface {
+	CreateCourse(instructorId uint, req *dto.CreateCourseRequest) (*dto.CreateCourseResponse, error)
+	GetInstructorCourses(instructorId uint, req *dto.GetInstructorCoursesQueryRequest) (*dto.GetInstructorCoursesResponse, error)
+	UpdateCourse(instructorId, courseId uint, req *dto.UpdateCourseRequest) (*dto.UpdateCourseResponse, error)
+	DeleteCourse(instructorId, courseId uint) (*dto.DeleteCourseResponse, error)
+}

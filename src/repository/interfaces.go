@@ -74,3 +74,14 @@ type EnrollmentRepository interface {
 	GetUserEnrollments(userId uint, offset, limit int, filters map[string]interface{}) ([]models.Enrollment, int, error)
 	CompleteEnrollment(enrollmentId uint) error
 }
+
+type InstructorRepository interface {
+	GetInstructorCourses(instructorId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Course, int, error)
+	CreateCourse(course *models.Course) error
+	FindCourseBySlug(slug string) (*models.Course, bool)
+	FindCourseById(courseId uint) (*models.Course, error)
+	FindCourseByIdAndInstructor(courseId, instructorId uint) (*models.Course, error)
+	UpdateCourse(courseId uint, updates map[string]interface{}) error
+	DeleteCourse(courseId uint) error
+	CountEnrollmentsByCourse(courseId uint) (int64, error)
+}
