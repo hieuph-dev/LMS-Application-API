@@ -361,3 +361,89 @@ func (is *instructorService) DeleteCourse(instructorId, courseId uint) (*dto.Del
 		CourseId: courseId,
 	}, nil
 }
+
+func (is *instructorService) GetCourseStudents(instructorId, courseId uint, req *dto.GetCourseStudentsQueryRequest) (*dto.GetCourseStudentsResponse, error) {
+	// 1. Kiểm tra course có tồn tại và thuộc về instructor này không
+	course, err := is.instructorRepo.FindCourseByIdAndInstructor(courseId, instructorId)
+	if err != nil {
+		return nil, utils.NewError("course not found or you don't have permission to view students", utils.ErrCodeNotFound)
+	}
+
+	// 2. Set default values
+	page := 1
+	if req.Page > 0 {
+		page = req.Page
+	}
+
+	limit := 20
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	offset := (page - 1) * limit
+
+	// 3. Build filters
+	filters := make(map[string]interface{})
+
+	if req.Status != "" {
+		filters["status"] = req.Status
+	}
+
+	if req.Search != "" {
+		filters["search"] = req.Search
+	}
+
+	// 4. Get enrollments from repository
+	enrollments, total, err := is.instructorRepo.GetCourseStudents(
+		courseId,
+		offset,
+		limit,
+		filters,
+		req.OrderBy,
+		req.SortBy,
+	)
+	if err != nil {
+		return nil, utils.WrapError(err, "failed to get course students", utils.ErrCodeInternal)
+	}
+
+	// 5. Get statistics
+	statistics, err := is.instructorRepo.GetStudentStatistics(courseId)
+	if err != nil {
+		return nil, utils.WrapError(err, "failed to get student statistics", utils.ErrCodeInternal)
+	}
+
+	// 6. Convert to DTO
+	studentItems := make([]dto.CourseStudentItem, len(enrollments))
+	for i, enrollment := range enrollments {
+		studentItems[i] = dto.CourseStudentItem{
+			UserId:             enrollment.UserId,
+			Username:           enrollment.User.Username,
+			Email:              enrollment.User.Email,
+			FullName:           enrollment.User.FullName,
+			AvatarURL:          enrollment.User.AvatarURL,
+			EnrolledAt:         enrollment.EnrolledAt,
+			CompletedAt:        enrollment.CompletedAt,
+			ProgressPercentage: enrollment.ProgressPercentage,
+			LastAccessedAt:     enrollment.LastAccessedAt,
+			Status:             enrollment.Status,
+		}
+	}
+
+	// 7. Calculate pagination
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+	return &dto.GetCourseStudentsResponse{
+		CourseId:    course.Id,
+		CourseTitle: course.Title,
+		Students:    studentItems,
+		Statistics:  *statistics,
+		Pagination: dto.PaginationInfo{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+			HasNext:    page < totalPages,
+			HasPrev:    page > 1,
+		},
+	}, nil
+}

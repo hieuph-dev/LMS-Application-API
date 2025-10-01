@@ -30,6 +30,10 @@ func (ar *AdminRoutes) Register(r *gin.RouterGroup) {
 			admin.PUT("/users/:id", ar.handler.UpdateUser)
 			admin.DELETE("/users/:id", ar.handler.DeleteUser)
 			admin.PUT("/users/:id/status", ar.handler.ChangeUserStatus)
+
+			// Course management
+			admin.GET("/courses", ar.handler.GetCourses)
+			admin.PUT("/courses/:id/status", ar.handler.ChangeCourseStatus)
 		}
 	}
 }

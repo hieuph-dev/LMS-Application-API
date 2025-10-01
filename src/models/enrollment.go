@@ -10,6 +10,7 @@ import (
 type Enrollment struct {
 	Id                 uint           `gorm:"primaryKey" json:"id"`
 	UserId             uint           `json:"user_id"`
+	User               User           `gorm:"foreignKey:UserId" json:"user"`
 	CourseId           uint           `json:"course_id"`
 	EnrolledAt         time.Time      `json:"enrolled_at"`
 	CompletedAt        *time.Time     `json:"completed_at"`

@@ -43,6 +43,8 @@ type CourseRepository interface {
 	GetSearchFilters(query string) (*dto.SearchFilters, error)
 	GetFeaturedCourses(limit int, filters map[string]interface{}) ([]models.Course, int, error)
 	FindBySlug(slug string) (*models.Course, error)
+	FindById(courseId uint) (*models.Course, error)
+	UpdateCourseStatus(courseId uint, status string) error
 }
 
 type ReviewRepository interface {
@@ -84,4 +86,6 @@ type InstructorRepository interface {
 	UpdateCourse(courseId uint, updates map[string]interface{}) error
 	DeleteCourse(courseId uint) error
 	CountEnrollmentsByCourse(courseId uint) (int64, error)
+	GetCourseStudents(courseId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Enrollment, int, error)
+	GetStudentStatistics(courseId uint) (*dto.StudentStatistics, error)
 }

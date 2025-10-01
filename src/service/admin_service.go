@@ -11,12 +11,14 @@ import (
 )
 
 type adminService struct {
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepository
+	courseRepo repository.CourseRepository
 }
 
-func NewAdminService(userRepo repository.UserRepository) AdminService {
+func NewAdminService(userRepo repository.UserRepository, courseRepo repository.CourseRepository) AdminService {
 	return &adminService{
-		userRepo: userRepo,
+		userRepo:   userRepo,
+		courseRepo: courseRepo,
 	}
 }
 
@@ -263,5 +265,139 @@ func (as *adminService) ChangeUserStatus(userId uint, req *dto.ChangeUserStatusR
 		Email:    existingUser.Email,
 		Status:   req.Status,
 		Message:  message,
+	}, nil
+}
+
+func (as *adminService) GetCourses(req *dto.GetAdminCoursesQueryRequest) (*dto.GetAdminCoursesResponse, error) {
+	// Set default values
+	page := 1
+	if req.Page > 0 {
+		page = req.Page
+	}
+
+	limit := 20
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	offset := (page - 1) * limit
+
+	// Build filters
+	filters := make(map[string]interface{})
+
+	if req.Status != "" {
+		filters["status"] = req.Status
+	}
+
+	if req.Level != "" {
+		filters["level"] = req.Level
+	}
+
+	if req.CategoryId > 0 {
+		filters["category_id"] = req.CategoryId
+	}
+
+	if req.InstructorId > 0 {
+		filters["instructor_id"] = req.InstructorId
+	}
+
+	if req.IsFeatured != nil {
+		filters["is_featured"] = *req.IsFeatured
+	}
+
+	if req.Search != "" {
+		filters["search"] = req.Search
+	}
+
+	// Get courses from repository
+	courses, total, err := as.courseRepo.GetCoursesWithPagination(
+		offset,
+		limit,
+		filters,
+		req.OrderBy,
+		req.SortBy,
+	)
+	if err != nil {
+		return nil, utils.WrapError(err, "failed to get courses", utils.ErrCodeInternal)
+	}
+
+	// Convert to DTO
+	courseItems := make([]dto.AdminCourseItem, len(courses))
+	for i, course := range courses {
+		courseItems[i] = dto.AdminCourseItem{
+			Id:             course.Id,
+			Title:          course.Title,
+			Slug:           course.Slug,
+			ThumbnailURL:   course.ThumbnailURL,
+			Price:          course.Price,
+			DiscountPrice:  course.DiscountPrice,
+			InstructorId:   course.InstructorId,
+			InstructorName: course.Instructor.FullName,
+			CategoryId:     course.CategoryId,
+			CategoryName:   course.Category.Name,
+			Level:          course.Level,
+			Status:         course.Status,
+			TotalLessons:   course.TotalLessons,
+			DurationHours:  course.DurationHours,
+			EnrolledCount:  course.EnrolledCount,
+			RatingAvg:      course.RatingAvg,
+			RatingCount:    course.RatingCount,
+			IsFeatured:     course.IsFeatured,
+			CreatedAt:      course.CreatedAt,
+			UpdatedAt:      course.UpdatedAt,
+		}
+	}
+
+	// Calculate pagination
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+	return &dto.GetAdminCoursesResponse{
+		Courses: courseItems,
+		Pagination: dto.PaginationInfo{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+			HasNext:    page < totalPages,
+			HasPrev:    page > 1,
+		},
+	}, nil
+}
+
+func (as *adminService) ChangeCourseStatus(courseId uint, req *dto.ChangeCourseStatusRequest) (*dto.ChangeCourseStatusResponse, error) {
+	// 1. Kiểm tra course có tồn tại không
+	course, err := as.courseRepo.FindById(courseId)
+	if err != nil {
+		return nil, utils.NewError("course not found", utils.ErrCodeNotFound)
+	}
+
+	// 2. Kiểm tra trạng thái hiện tại
+	if course.Status == req.Status {
+		return nil, utils.NewError("course already has this status", utils.ErrCodeBadRequest)
+	}
+
+	// 3. Validate business rules
+	// Không cho phép publish course chưa có lesson
+	if req.Status == "published" && course.TotalLessons == 0 {
+		return nil, utils.NewError("cannot publish course without lessons", utils.ErrCodeBadRequest)
+	}
+
+	// 4. Update status
+	if err := as.courseRepo.UpdateCourseStatus(courseId, req.Status); err != nil {
+		return nil, utils.WrapError(err, "failed to update course status", utils.ErrCodeInternal)
+	}
+
+	// 5. Build message
+	message := fmt.Sprintf("Course status changed from '%s' to '%s'", course.Status, req.Status)
+	if req.Reason != "" {
+		message += fmt.Sprintf(". Reason: %s", req.Reason)
+	}
+
+	return &dto.ChangeCourseStatusResponse{
+		Id:      course.Id,
+		Title:   course.Title,
+		Slug:    course.Slug,
+		Status:  req.Status,
+		Message: message,
 	}, nil
 }

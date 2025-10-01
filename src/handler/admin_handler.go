@@ -183,3 +183,55 @@ func (ah *AdminHandler) ChangeUserStatus(ctx *gin.Context) {
 
 	utils.ResponseSuccess(ctx, http.StatusOK, response)
 }
+
+// GET /api/v1/admin/courses - Lấy tất cả courses (Admin)
+func (ah *AdminHandler) GetCourses(ctx *gin.Context) {
+	// Parse query parameters
+	var req dto.GetAdminCoursesQueryRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.ResponseValidator(ctx, validation.HandlerValidationErrors(err))
+		return
+	}
+
+	// Gọi service để lấy danh sách courses
+	response, err := ah.service.GetCourses(&req)
+	if err != nil {
+		utils.ResponseError(ctx, err)
+		return
+	}
+
+	utils.ResponseSuccess(ctx, http.StatusOK, response)
+}
+
+// PUT /api/v1/admin/courses/:id/status - Thay đổi trạng thái course (Admin)
+func (ah *AdminHandler) ChangeCourseStatus(ctx *gin.Context) {
+	// Lấy course ID từ URL parameter
+	courseIdParam := ctx.Param("id")
+	if courseIdParam == "" {
+		utils.ResponseError(ctx, utils.NewError("Course Id is required", utils.ErrCodeBadRequest))
+		return
+	}
+
+	// Convert string to uint
+	courseId, err := strconv.ParseUint(courseIdParam, 10, 32)
+	if err != nil {
+		utils.ResponseError(ctx, utils.NewError("Invalid course Id format", utils.ErrCodeBadRequest))
+		return
+	}
+
+	// Bind JSON request
+	var req dto.ChangeCourseStatusRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.ResponseValidator(ctx, validation.HandlerValidationErrors(err))
+		return
+	}
+
+	// Gọi service để thay đổi status
+	response, err := ah.service.ChangeCourseStatus(uint(courseId), &req)
+	if err != nil {
+		utils.ResponseError(ctx, err)
+		return
+	}
+
+	utils.ResponseSuccess(ctx, http.StatusOK, response)
+}

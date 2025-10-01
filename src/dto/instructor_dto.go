@@ -131,3 +131,41 @@ type DeleteCourseResponse struct {
 	Message  string `json:"message"`
 	CourseId uint   `json:"course_id"`
 }
+
+type GetCourseStudentsQueryRequest struct {
+	Page    int    `form:"page" binding:"omitempty,min=1"`
+	Limit   int    `form:"limit" binding:"omitempty,min=1,max=100"`
+	Status  string `form:"status" binding:"omitempty,oneof=active completed dropped"`
+	Search  string `form:"search" binding:"omitempty,search"`
+	OrderBy string `form:"order_by" binding:"omitempty,oneof=enrolled_at completed_at progress_percentage last_accessed_at"`
+	SortBy  string `form:"sort_by" binding:"omitempty,oneof=asc desc"`
+}
+
+type CourseStudentItem struct {
+	UserId             uint       `json:"user_id"`
+	Username           string     `json:"username"`
+	Email              string     `json:"email"`
+	FullName           string     `json:"full_name"`
+	AvatarURL          string     `json:"avatar_url"`
+	EnrolledAt         time.Time  `json:"enrolled_at"`
+	CompletedAt        *time.Time `json:"completed_at"`
+	ProgressPercentage float64    `json:"progress_percentage"`
+	LastAccessedAt     *time.Time `json:"last_accessed_at"`
+	Status             string     `json:"status"`
+}
+
+type GetCourseStudentsResponse struct {
+	CourseId    uint                `json:"course_id"`
+	CourseTitle string              `json:"course_title"`
+	Students    []CourseStudentItem `json:"students"`
+	Statistics  StudentStatistics   `json:"statistics"`
+	Pagination  PaginationInfo      `json:"pagination"`
+}
+
+type StudentStatistics struct {
+	TotalStudents     int     `json:"total_students"`
+	ActiveStudents    int     `json:"active_students"`
+	CompletedStudents int     `json:"completed_students"`
+	DroppedStudents   int     `json:"dropped_students"`
+	AverageProgress   float64 `json:"average_progress"`
+}

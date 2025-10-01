@@ -28,6 +28,7 @@ func (ir *InstructorRoutes) Register(r *gin.RouterGroup) {
 			instructor.POST("/courses", ir.handler.CreateCourse)
 			instructor.PUT("/courses/:id", ir.handler.UpdateCourse)
 			instructor.DELETE("/courses/:id", ir.handler.DeleteCourse)
+			instructor.GET("/courses/:id/students", ir.handler.GetCourseStudents)
 		}
 	}
 }

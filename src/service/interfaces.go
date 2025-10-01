@@ -33,6 +33,8 @@ type AdminService interface {
 	UpdateUser(userId uint, req *dto.UpdateUserRequest) (*dto.UpdateUserResponse, error)
 	DeleteUser(userId uint) (*dto.DeleteUserResponse, error)
 	ChangeUserStatus(userId uint, req *dto.ChangeUserStatusRequest) (*dto.ChangeUserStatusResponse, error)
+	GetCourses(req *dto.GetAdminCoursesQueryRequest) (*dto.GetAdminCoursesResponse, error)
+	ChangeCourseStatus(courseId uint, req *dto.ChangeCourseStatusRequest) (*dto.ChangeCourseStatusResponse, error)
 }
 
 type CategoryService interface {
@@ -69,4 +71,5 @@ type InstructorService interface {
 	GetInstructorCourses(instructorId uint, req *dto.GetInstructorCoursesQueryRequest) (*dto.GetInstructorCoursesResponse, error)
 	UpdateCourse(instructorId, courseId uint, req *dto.UpdateCourseRequest) (*dto.UpdateCourseResponse, error)
 	DeleteCourse(instructorId, courseId uint) (*dto.DeleteCourseResponse, error)
+	GetCourseStudents(instructorId, courseId uint, req *dto.GetCourseStudentsQueryRequest) (*dto.GetCourseStudentsResponse, error)
 }

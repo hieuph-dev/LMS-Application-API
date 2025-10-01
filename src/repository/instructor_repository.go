@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"lms/src/dto"
 	"lms/src/models"
 	"strings"
 
@@ -103,4 +104,98 @@ func (ir *DBInstructorRepository) CountEnrollmentsByCourse(courseId uint) (int64
 		return 0, err
 	}
 	return count, nil
+}
+
+func (ir *DBInstructorRepository) GetCourseStudents(courseId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Enrollment, int, error) {
+	var enrollments []models.Enrollment
+	var total int64
+
+	query := ir.db.Model(&models.Enrollment{}).
+		Preload("User").
+		Where("course_id", courseId)
+
+	// Apply filters
+	for field, value := range filters {
+		if field == "search" {
+			searchTerm := fmt.Sprintf("%%%s%%", value)
+			query = query.Joins("JOIN users ON users.id = enrollments.user_id").
+				Where("users.username ILIKE ? OR users.email ILIKE ? OR users.full_name ILIKE ?",
+					searchTerm, searchTerm, searchTerm)
+		} else {
+			query = query.Where(fmt.Sprintf("enrollments.%s = ?", field), value)
+		}
+	}
+
+	// Count total records
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply ordering
+	if orderBy != "" && sortBy != "" {
+		query = query.Order(fmt.Sprintf("enrollments.%s %s", orderBy, strings.ToUpper(sortBy)))
+	} else {
+		query = query.Order("enrollments.enrolled_at DESC")
+	}
+
+	// Apply pagination
+	if err := query.Offset(offset).Limit(limit).Find(&enrollments).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return enrollments, int(total), nil
+}
+
+func (ir *DBInstructorRepository) GetStudentStatistics(courseId uint) (*dto.StudentStatistics, error) {
+	var stats dto.StudentStatistics
+
+	// Total students
+	var totalStudents int64
+	if err := ir.db.Model(&models.Enrollment{}).
+		Where("course_id = ?", courseId).
+		Count(&totalStudents).Error; err != nil {
+		return nil, err
+	}
+	stats.TotalStudents = int(totalStudents)
+
+	// Active students
+	var activeStudents int64
+	if err := ir.db.Model(&models.Enrollment{}).
+		Where("course_id = ? AND status = ?", courseId, "active").
+		Count(&activeStudents).Error; err != nil {
+		return nil, err
+	}
+	stats.ActiveStudents = int(activeStudents)
+
+	// Completed students
+	var completedStudents int64
+	if err := ir.db.Model(&models.Enrollment{}).
+		Where("course_id = ? AND status = ?", courseId, "completed").
+		Count(&completedStudents).Error; err != nil {
+		return nil, err
+	}
+	stats.CompletedStudents = int(completedStudents)
+
+	// Dropped students
+	var droppedStudents int64
+	if err := ir.db.Model(&models.Enrollment{}).
+		Where("course_id = ? AND status = ?", courseId, "dropped").
+		Count(&droppedStudents).Error; err != nil {
+		return nil, err
+	}
+	stats.DroppedStudents = int(droppedStudents)
+
+	// Average progress
+	var avgProgress struct {
+		Avg float64
+	}
+	if err := ir.db.Model(&models.Enrollment{}).
+		Select("COALESCE(AVG(progress_percentage), 0) as avg").
+		Where("course_id = ?", courseId).
+		Scan(&avgProgress).Error; err != nil {
+		return nil, err
+	}
+	stats.AverageProgress = avgProgress.Avg
+
+	return &stats, nil
 }

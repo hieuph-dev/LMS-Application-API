@@ -222,3 +222,18 @@ func (cr *DBCourseRepository) FindBySlug(slug string) (*models.Course, error) {
 	}
 	return &course, nil
 }
+
+func (cr *DBCourseRepository) FindById(courseId uint) (*models.Course, error) {
+	var course models.Course
+	if err := cr.db.Preload("Instructor").Preload("Category").
+		Where("id = ?", courseId).First(&course).Error; err != nil {
+		return nil, err
+	}
+	return &course, nil
+}
+
+func (cr *DBCourseRepository) UpdateCourseStatus(courseId uint, status string) error {
+	return cr.db.Model(&models.Course{}).
+		Where("id = ?", courseId).
+		Update("status", status).Error
+}

@@ -96,3 +96,57 @@ type ChangeUserStatusResponse struct {
 	Status   string `json:"status"`
 	Message  string `json:"message"`
 }
+
+type GetAdminCoursesQueryRequest struct {
+	Page         int    `form:"page" binding:"omitempty,min=1"`
+	Limit        int    `form:"limit" binding:"omitempty,min=1,max=100"`
+	Status       string `form:"status" binding:"omitempty,course_status"`
+	Level        string `form:"level" binding:"omitempty,course_level"`
+	CategoryId   uint   `form:"category_id" binding:"omitempty"`
+	InstructorId uint   `form:"instructor_id" binding:"omitempty"`
+	IsFeatured   *bool  `form:"is_featured" binding:"omitempty"`
+	Search       string `form:"search" binding:"omitempty,search"`
+	OrderBy      string `form:"order_by" binding:"omitempty,oneof=created_at updated_at title price enrolled_count rating_avg"`
+	SortBy       string `form:"sort_by" binding:"omitempty,oneof=asc desc"`
+}
+
+type AdminCourseItem struct {
+	Id             uint      `json:"id"`
+	Title          string    `json:"title"`
+	Slug           string    `json:"slug"`
+	ThumbnailURL   string    `json:"thumbnail_url"`
+	Price          float64   `json:"price"`
+	DiscountPrice  *float64  `json:"discount_price"`
+	InstructorId   uint      `json:"instructor_id"`
+	InstructorName string    `json:"instructor_name"`
+	CategoryId     uint      `json:"category_id"`
+	CategoryName   string    `json:"category_name"`
+	Level          string    `json:"level"`
+	Status         string    `json:"status"`
+	TotalLessons   int       `json:"total_lessons"`
+	DurationHours  int       `json:"duration_hours"`
+	EnrolledCount  int       `json:"enrolled_count"`
+	RatingAvg      float32   `json:"rating_avg"`
+	RatingCount    int       `json:"rating_count"`
+	IsFeatured     bool      `json:"is_featured"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type GetAdminCoursesResponse struct {
+	Courses    []AdminCourseItem `json:"courses"`
+	Pagination PaginationInfo    `json:"pagination"`
+}
+
+type ChangeCourseStatusRequest struct {
+	Status string `json:"status" binding:"required,course_status"`
+	Reason string `json:"reason" binding:"omitempty,max=500"`
+}
+
+type ChangeCourseStatusResponse struct {
+	Id      uint   `json:"id"`
+	Title   string `json:"title"`
+	Slug    string `json:"slug"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}

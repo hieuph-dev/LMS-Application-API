@@ -15,9 +15,10 @@ type AdminModule struct {
 func NewAdminModule() *AdminModule {
 	// Tạo repository để tương tác với database
 	userRepo := repository.NewDBUserRepository(db.DB)
+	courseRepo := repository.NewDBCourseRepository(db.DB)
 
 	// Tạo service chứa business logic
-	adminService := service.NewAdminService(userRepo)
+	adminService := service.NewAdminService(userRepo, courseRepo)
 
 	// Tạo handler xử lý HTTP requests
 	adminHandler := handler.NewAdminHandler(adminService)
