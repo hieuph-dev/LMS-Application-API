@@ -3,6 +3,8 @@ package repository
 import (
 	"lms/src/dto"
 	"lms/src/models"
+
+	"gorm.io/gorm"
 )
 
 type UserRepository interface {
@@ -56,6 +58,10 @@ type LessonRepository interface {
 	GetCourseLessons(courseId uint) ([]models.Lesson, error)
 	CheckUserEnrollment(userId, courseId uint) (bool, error)
 	GetLessonProgress(userId uint, lessonIds []uint) (map[uint]bool, error)
+	GetLessonProgressDetail(userId, lessonId uint) (*models.Progress, error)
+	GetPreviousLesson(courseId uint, currentOrder int) (*models.Lesson, error)
+	GetNextLesson(courseId uint, currentOrder int) (*models.Lesson, error)
+	FindLessonBySlugAndCourse(slug string, courseId uint) (*models.Lesson, error)
 }
 
 type CouponRepository interface {
@@ -88,4 +94,14 @@ type InstructorRepository interface {
 	CountEnrollmentsByCourse(courseId uint) (int64, error)
 	GetCourseStudents(courseId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Enrollment, int, error)
 	GetStudentStatistics(courseId uint) (*dto.StudentStatistics, error)
+	CreateLesson(lesson *models.Lesson) error
+	FindLessonBySlug(slug string, courseId uint) (*models.Lesson, bool)
+	CheckLessonOrderExists(courseId uint, lessonOrder int) (bool, error)
+	FindLessonByIdAndCourse(lessonId, courseId uint) (*models.Lesson, error)
+	UpdateLesson(lessonId uint, updates map[string]interface{}) error
+	DeleteLesson(lessonId uint) error
+	CheckLessonOrderExistsExcept(courseId uint, lessonOrder int, excludeId uint) (bool, error)
+	FindLessonsByIds(lessonIds []uint) ([]models.Lesson, error)
+	UpdateLessonOrder(lessonId uint, newOrder int) error
+	BeginTransaction() *gorm.DB
 }

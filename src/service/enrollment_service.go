@@ -35,9 +35,8 @@ func NewEnrollmentService(
 
 func (es *enrollmentService) EnrollCourse(userId, courseId uint, req *dto.EnrollCourseRequest) (*dto.EnrollCourseResponse, error) {
 	// 1. Kiểm tra course có tồn tại không
-	course, err := es.courseRepo.FindBySlug("")
+	course, err := es.courseRepo.FindById(courseId)
 	if err != nil {
-		// Query trực tiếp hoặc thêm method
 		return nil, utils.NewError("Course not found", utils.ErrCodeNotFound)
 	}
 

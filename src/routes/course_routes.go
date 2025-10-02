@@ -24,6 +24,6 @@ func (cr *CourseRoutes) Register(r *gin.RouterGroup) {
 		courses.GET("/search", cr.handler.SearchCourses)
 		courses.GET("/featured", cr.handler.GetFeaturedCourses)
 		courses.GET("/:slug", cr.handler.GetCourseBySlug)
-		courses.GET("/id/:id/reviews", cr.handler.GetCourseReviews)
+		courses.GET("/course_id/:course_id/reviews", cr.handler.GetCourseReviews)
 	}
 }

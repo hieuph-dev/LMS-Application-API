@@ -67,3 +67,76 @@ func (lr *DBLessonRepository) GetLessonProgress(userId uint, lessonIds []uint) (
 
 	return progressMap, nil
 }
+
+func (lr *DBLessonRepository) FindLessonBySlugAndCourse(slug string, courseId uint) (*models.Lesson, error) {
+	var lesson models.Lesson
+
+	err := lr.db.Where("slug = ? AND course_id = ? AND is_published = ? AND deleted_at IS NULL",
+		slug, courseId, true).
+		First(&lesson).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &lesson, nil
+}
+
+func (lr *DBLessonRepository) GetLessonProgressDetail(userId, lessonId uint) (*models.Progress, error) {
+	var progress models.Progress
+
+	err := lr.db.Where("user_id = ? AND lesson_id = ? AND deleted_at IS NULL",
+		userId, lessonId).
+		First(&progress).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Trả về progress mặc định nếu chưa có
+			return &models.Progress{
+				UserId:        userId,
+				LessonId:      lessonId,
+				IsCompleted:   false,
+				WatchDuration: 0,
+				LastPosition:  0,
+			}, nil
+		}
+		return nil, err
+	}
+	return &progress, nil
+}
+
+func (lr *DBLessonRepository) GetPreviousLesson(courseId uint, currentOrder int) (*models.Lesson, error) {
+	var lesson models.Lesson
+
+	err := lr.db.Where("course_id = ? AND lesson_order < ? AND is_published = ? AND deleted_at IS NULL",
+		courseId, currentOrder, true).
+		Order("lesson_order DESC").
+		First(&lesson).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // Không có lesson trước
+		}
+		return nil, err
+	}
+
+	return &lesson, nil
+}
+
+func (lr *DBLessonRepository) GetNextLesson(courseId uint, currentOrder int) (*models.Lesson, error) {
+	var lesson models.Lesson
+
+	err := lr.db.Where("course_id = ? AND lesson_order > ? AND is_published = ? AND deleted_at IS NULL",
+		courseId, currentOrder, true).
+		Order("lesson_order ASC").
+		First(&lesson).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // Không có lesson tiếp theo
+		}
+		return nil, err
+	}
+
+	return &lesson, nil
+}

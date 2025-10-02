@@ -203,10 +203,10 @@ func (ah *AdminHandler) GetCourses(ctx *gin.Context) {
 	utils.ResponseSuccess(ctx, http.StatusOK, response)
 }
 
-// PUT /api/v1/admin/courses/:id/status - Thay đổi trạng thái course (Admin)
+// PUT /api/v1/admin/courses/:course_id/status - Thay đổi trạng thái course (Admin)
 func (ah *AdminHandler) ChangeCourseStatus(ctx *gin.Context) {
 	// Lấy course ID từ URL parameter
-	courseIdParam := ctx.Param("id")
+	courseIdParam := ctx.Param("course_id")
 	if courseIdParam == "" {
 		utils.ResponseError(ctx, utils.NewError("Course Id is required", utils.ErrCodeBadRequest))
 		return

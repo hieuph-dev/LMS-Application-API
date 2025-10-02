@@ -33,7 +33,7 @@ func (ar *AdminRoutes) Register(r *gin.RouterGroup) {
 
 			// Course management
 			admin.GET("/courses", ar.handler.GetCourses)
-			admin.PUT("/courses/:id/status", ar.handler.ChangeCourseStatus)
+			admin.PUT("/courses/:course_id/status", ar.handler.ChangeCourseStatus)
 		}
 	}
 }

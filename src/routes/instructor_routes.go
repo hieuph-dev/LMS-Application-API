@@ -24,11 +24,18 @@ func (ir *InstructorRoutes) Register(r *gin.RouterGroup) {
 		instructor.Use(middleware.AuthMiddleware())
 		instructor.Use(middleware.InstructorMiddleware())
 		{
+			// Course management
 			instructor.GET("/courses", ir.handler.GetInstructorCourses)
 			instructor.POST("/courses", ir.handler.CreateCourse)
-			instructor.PUT("/courses/:id", ir.handler.UpdateCourse)
-			instructor.DELETE("/courses/:id", ir.handler.DeleteCourse)
-			instructor.GET("/courses/:id/students", ir.handler.GetCourseStudents)
+			instructor.PUT("/courses/:course_id", ir.handler.UpdateCourse)
+			instructor.DELETE("/courses/:course_id", ir.handler.DeleteCourse)
+			instructor.GET("/courses/:course_id/students", ir.handler.GetCourseStudents)
+
+			// Lesson management
+			instructor.POST("/courses/:course_id/lessons", ir.handler.CreateLesson)
+			instructor.PUT("/courses/:course_id/lessons/:id", ir.handler.UpdateLesson)
+			instructor.DELETE("/courses/:course_id/lessons/:id", ir.handler.DeleteLesson)
+			instructor.PUT("/lessons/:id/reorder", ir.handler.ReorderLessons)
 		}
 	}
 }

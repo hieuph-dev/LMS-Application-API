@@ -25,10 +25,10 @@ func (er *EnrollmentRoutes) Register(r *gin.RouterGroup) {
 		courses.Use(middleware.AuthMiddleware())
 		{
 			// Enroll vào course
-			courses.POST("/:id/enroll", er.handler.EnrollCourse)
+			courses.POST("/:course_id/enroll", er.handler.EnrollCourse)
 
 			// Kiểm tra enrollment status
-			courses.GET("/id/:id/check-enrollment", er.handler.CheckEnrollment)
+			courses.GET("/course_id/:course_id/check-enrollment", er.handler.CheckEnrollment)
 		}
 	}
 

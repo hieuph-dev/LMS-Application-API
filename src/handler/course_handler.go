@@ -99,10 +99,10 @@ func (ch *CourseHandler) GetCourseBySlug(ctx *gin.Context) {
 	utils.ResponseSuccess(ctx, http.StatusOK, course)
 }
 
-// GET /api/v1/courses/:id/reviews - Lấy reviews của course
+// GET /api/v1/courses/course_id/:course_id/reviews - Lấy reviews của course
 func (ch *CourseHandler) GetCourseReviews(ctx *gin.Context) {
 	// Lấy course ID từ URL parameter
-	courseIdParam := ctx.Param("id")
+	courseIdParam := ctx.Param("course_id")
 	if courseIdParam == "" {
 		utils.ResponseError(ctx, utils.NewError("Course Id is required", utils.ErrCodeBadRequest))
 		return

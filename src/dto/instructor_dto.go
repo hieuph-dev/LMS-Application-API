@@ -169,3 +169,75 @@ type StudentStatistics struct {
 	DroppedStudents   int     `json:"dropped_students"`
 	AverageProgress   float64 `json:"average_progress"`
 }
+
+type CreateLessonRequest struct {
+	Title         string `json:"title" binding:"required,min=3,max=200"`
+	Description   string `json:"description" binding:"required,min=10"`
+	Content       string `json:"content" binding:"omitempty"`
+	VideoURL      string `json:"video_url" binding:"omitempty,url"`
+	VideoDuration int    `json:"video_duration" binding:"omitempty,min=0"`
+	LessonOrder   int    `json:"lesson_order" binding:"required,min=1"`
+	IsPreview     bool   `json:"is_preview" binding:"omitempty"`
+	IsPublished   bool   `json:"is_published" binding:"omitempty"`
+}
+
+type CreateLessonResponse struct {
+	Id            uint   `json:"id"`
+	CourseId      uint   `json:"course_id"`
+	Title         string `json:"title"`
+	Slug          string `json:"slug"`
+	Description   string `json:"description"`
+	Content       string `json:"content"`
+	VideoURL      string `json:"video_url"`
+	VideoDuration int    `json:"video_duration"`
+	LessonOrder   int    `json:"lesson_order"`
+	IsPreview     bool   `json:"is_preview"`
+	IsPublished   bool   `json:"is_published"`
+	CreatedAt     string `json:"created_at"`
+}
+
+type UpdateLessonRequest struct {
+	Title         *string `json:"title" binding:"omitempty,min=3,max=200"`
+	Description   *string `json:"description" binding:"omitempty,min=10"`
+	Content       *string `json:"content" binding:"omitempty"`
+	VideoURL      *string `json:"video_url" binding:"omitempty,url"`
+	VideoDuration *int    `json:"video_duration" binding:"omitempty,min=0"`
+	LessonOrder   *int    `json:"lesson_order" binding:"omitempty,min=1"`
+	IsPreview     *bool   `json:"is_preview" binding:"omitempty"`
+	IsPublished   *bool   `json:"is_published" binding:"omitempty"`
+}
+
+type UpdateLessonResponse struct {
+	Id            uint   `json:"id"`
+	CourseId      uint   `json:"course_id"`
+	Title         string `json:"title"`
+	Slug          string `json:"slug"`
+	Description   string `json:"description"`
+	Content       string `json:"content"`
+	VideoURL      string `json:"video_url"`
+	VideoDuration int    `json:"video_duration"`
+	LessonOrder   int    `json:"lesson_order"`
+	IsPreview     bool   `json:"is_preview"`
+	IsPublished   bool   `json:"is_published"`
+	UpdatedAt     string `json:"updated_at"`
+}
+
+type DeleteLessonResponse struct {
+	Message string `json:"message"`
+	Id      uint   `json:"id"`
+}
+
+type ReorderLessonsRequest struct {
+	Lessons []LessonOrderItem `json:"lessons" binding:"required,min=1,dive"`
+}
+
+type LessonOrderItem struct {
+	Id          uint `json:"id" binding:"required"`
+	LessonOrder int  `json:"lesson_order" binding:"required,min=1"`
+}
+
+type ReorderLessonsResponse struct {
+	Message      string `json:"message"`
+	UpdatedCount int    `json:"updated_count"`
+	CourseId     uint   `json:"course_id"`
+}

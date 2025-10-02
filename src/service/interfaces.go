@@ -58,6 +58,7 @@ type ReviewService interface {
 
 type LessonService interface {
 	GetCourseLessons(userId, courseId uint) (*dto.GetCourseLessonsResponse, error)
+	GetLessonDetail(userId, courseId uint, slug string) (*dto.LessonDetail, error)
 }
 
 type EnrollmentService interface {
@@ -72,4 +73,8 @@ type InstructorService interface {
 	UpdateCourse(instructorId, courseId uint, req *dto.UpdateCourseRequest) (*dto.UpdateCourseResponse, error)
 	DeleteCourse(instructorId, courseId uint) (*dto.DeleteCourseResponse, error)
 	GetCourseStudents(instructorId, courseId uint, req *dto.GetCourseStudentsQueryRequest) (*dto.GetCourseStudentsResponse, error)
+	CreateLesson(instructorId, courseId uint, req *dto.CreateLessonRequest) (*dto.CreateLessonResponse, error)
+	UpdateLesson(instructorId, courseId, lessonId uint, req *dto.UpdateLessonRequest) (*dto.UpdateLessonResponse, error)
+	DeleteLesson(instructorId, courseId, lessonId uint) (*dto.DeleteLessonResponse, error)
+	ReorderLessons(instructorId, lessonId uint, req *dto.ReorderLessonsRequest) (*dto.ReorderLessonsResponse, error)
 }

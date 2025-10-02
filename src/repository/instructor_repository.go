@@ -199,3 +199,85 @@ func (ir *DBInstructorRepository) GetStudentStatistics(courseId uint) (*dto.Stud
 
 	return &stats, nil
 }
+
+func (ir *DBInstructorRepository) CreateLesson(lesson *models.Lesson) error {
+	return ir.db.Create(lesson).Error
+}
+
+func (ir *DBInstructorRepository) FindLessonBySlug(slug string, courseId uint) (*models.Lesson, bool) {
+	var lesson models.Lesson
+	err := ir.db.Where("slug = ? AND course_id = ? AND deleted_at IS NULL", slug, courseId).
+		First(&lesson).Error
+
+	if err != nil {
+		return nil, false
+	}
+	return &lesson, true
+}
+
+func (ir *DBInstructorRepository) CheckLessonOrderExists(courseId uint, lessonOrder int) (bool, error) {
+	var count int64
+	err := ir.db.Model(&models.Lesson{}).
+		Where("course_id = ? AND lesson_order = ? AND deleted_at IS NULL", courseId, lessonOrder).
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (ir *DBInstructorRepository) FindLessonByIdAndCourse(lessonId, courseId uint) (*models.Lesson, error) {
+	var lesson models.Lesson
+	err := ir.db.Where("id = ? AND course_id = ? AND deleted_at IS NULL", lessonId, courseId).
+		First(&lesson).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return &lesson, nil
+}
+
+func (ir *DBInstructorRepository) UpdateLesson(lessonId uint, updates map[string]interface{}) error {
+	return ir.db.Model(&models.Lesson{}).
+		Where("id = ?", lessonId).
+		Updates(updates).Error
+}
+
+func (ir *DBInstructorRepository) DeleteLesson(lessonId uint) error {
+	return ir.db.Where("id = ?", lessonId).
+		Delete(&models.Lesson{}).Error
+}
+
+func (ir *DBInstructorRepository) CheckLessonOrderExistsExcept(courseId uint, lessonOrder int, excludeId uint) (bool, error) {
+	var count int64
+	err := ir.db.Model(&models.Lesson{}).
+		Where("course_id = ? AND lesson_order = ? AND id != ? AND deleted_at IS NULL",
+			courseId, lessonOrder, excludeId).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (ir *DBInstructorRepository) FindLessonsByIds(lessonIds []uint) ([]models.Lesson, error) {
+	var lessons []models.Lesson
+	err := ir.db.Where("id IN ? AND deleted_at IS NULL", lessonIds).
+		Find(&lessons).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return lessons, nil
+}
+
+func (ir *DBInstructorRepository) UpdateLessonOrder(lessonId uint, newOrder int) error {
+	return ir.db.Model(&models.Lesson{}).
+		Where("id = ?", lessonId).
+		Update("lesson_order", newOrder).Error
+}
+
+func (ir *DBInstructorRepository) BeginTransaction() *gorm.DB {
+	return ir.db.Begin()
+}

@@ -21,10 +21,10 @@ func NewEnrollmentHandler(service service.EnrollmentService) *EnrollmentHandler 
 	}
 }
 
-// POST /api/v1/courses/:id/enroll - Enroll vào course
+// POST /api/v1/courses/:course_id/enroll - Enroll vào course
 func (eh *EnrollmentHandler) EnrollCourse(ctx *gin.Context) {
 	// Lấy course ID từ URL parameter
-	courseIdParam := ctx.Param("id")
+	courseIdParam := ctx.Param("course_id")
 	if courseIdParam == "" {
 		utils.ResponseError(ctx, utils.NewError("Course Id is required", utils.ErrCodeBadRequest))
 		return
@@ -61,10 +61,10 @@ func (eh *EnrollmentHandler) EnrollCourse(ctx *gin.Context) {
 	utils.ResponseSuccess(ctx, http.StatusCreated, response)
 }
 
-// GET /api/v1/courses/:id/check-enrollment - Kiểm tra đã enroll chưa
+// GET /api/v1/course_id/:course_id/check-enrollment - Kiểm tra đã enroll chưa
 func (eh *EnrollmentHandler) CheckEnrollment(ctx *gin.Context) {
 	// Lấy course ID từ URL parameter
-	courseIdParam := ctx.Param("id")
+	courseIdParam := ctx.Param("course_id")
 	if courseIdParam == "" {
 		utils.ResponseError(ctx, utils.NewError("Course Id is required", utils.ErrCodeBadRequest))
 		return

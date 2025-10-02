@@ -23,7 +23,11 @@ func (lr *LessonRoutes) Register(r *gin.RouterGroup) {
 		// Protected route - cần authentication
 		courses.Use(middleware.AuthMiddleware())
 		{
-			courses.GET("/id/:id/lessons", lr.handler.GetCourseLessons)
+			// Lấy danh sách lessons
+			courses.GET("/course_id/:course_id/lessons", lr.handler.GetCourseLessons)
+
+			// Lấy lesson detail
+			courses.GET("/course_id/:course_id/lessons/:slug", lr.handler.GetCourseLessons)
 		}
 	}
 }
