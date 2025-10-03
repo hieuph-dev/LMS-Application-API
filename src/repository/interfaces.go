@@ -105,3 +105,10 @@ type InstructorRepository interface {
 	UpdateLessonOrder(lessonId uint, newOrder int) error
 	BeginTransaction() *gorm.DB
 }
+
+type ProgressRepository interface {
+	CountCompletedLessons(userId, courseId uint) (int, error)
+	GetCourseProgress(userId, courseId uint) ([]models.Progress, error)
+	UpdateProgress(progress *models.Progress) error
+	GetLessonProgress(userId, lessonId uint) (*models.Progress, error)
+}

@@ -17,8 +17,9 @@ func NewEnrollmentModule() *EnrollmentModule {
 	orderRepo := repository.NewDBOrderRepository(db.DB)
 	courseRepo := repository.NewDBCourseRepository(db.DB)
 	couponRepo := repository.NewDBCouponRepository(db.DB)
+	progressRepo := repository.NewDBProgressRepository(db.DB)
 
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, orderRepo, courseRepo, couponRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, orderRepo, courseRepo, couponRepo, progressRepo)
 
 	enrollmentHandler := handler.NewEnrollmentHandler(enrollmentService)
 

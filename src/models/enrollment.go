@@ -12,6 +12,7 @@ type Enrollment struct {
 	UserId             uint           `json:"user_id"`
 	User               User           `gorm:"foreignKey:UserId" json:"user"`
 	CourseId           uint           `json:"course_id"`
+	Course             Course         `gorm:"foreignKey:CourseId" json:"course"` // ✅ Thêm relation để Preload
 	EnrolledAt         time.Time      `json:"enrolled_at"`
 	CompletedAt        *time.Time     `json:"completed_at"`
 	ProgressPercentage float64        `gorm:"default:0" json:"progress_percentage"`

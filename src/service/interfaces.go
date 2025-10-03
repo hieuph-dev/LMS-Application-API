@@ -78,3 +78,7 @@ type InstructorService interface {
 	DeleteLesson(instructorId, courseId, lessonId uint) (*dto.DeleteLessonResponse, error)
 	ReorderLessons(instructorId, lessonId uint, req *dto.ReorderLessonsRequest) (*dto.ReorderLessonsResponse, error)
 }
+
+type ProgressService interface {
+	GetCourseProgress(userId, courseId uint) (*dto.GetCourseProgressResponse, error)
+}

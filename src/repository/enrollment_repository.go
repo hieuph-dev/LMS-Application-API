@@ -50,8 +50,12 @@ func (er *DBEnrollmentRepository) GetUserEnrollments(userId uint, offset, limit 
 		return nil, 0, err
 	}
 
-	// Get enrollments
-	if err := query.Order("enrolled_at DESC").
+	// Get enrollments with Course preloaded
+	// ✅ Thêm Preload để load course và instructor info
+	if err := query.
+		Preload("Course").            // Load course info
+		Preload("Course.Instructor"). // Load instructor info
+		Order("enrolled_at DESC").
 		Offset(offset).
 		Limit(limit).
 		Find(&enrollments).Error; err != nil {

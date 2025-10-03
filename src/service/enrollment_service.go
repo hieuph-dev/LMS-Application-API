@@ -17,6 +17,7 @@ type enrollmentService struct {
 	orderRepo      repository.OrderRepository
 	courseRepo     repository.CourseRepository
 	couponRepo     repository.CouponRepository
+	progressRepo   repository.ProgressRepository // Thêm để đếm completed lessons
 }
 
 func NewEnrollmentService(
@@ -24,12 +25,14 @@ func NewEnrollmentService(
 	orderRepo repository.OrderRepository,
 	courseRepo repository.CourseRepository,
 	couponRepo repository.CouponRepository,
+	progressRepo repository.ProgressRepository,
 ) EnrollmentService {
 	return &enrollmentService{
 		enrollmentRepo: enrollmentRepo,
 		orderRepo:      orderRepo,
 		courseRepo:     courseRepo,
 		couponRepo:     couponRepo,
+		progressRepo:   progressRepo,
 	}
 }
 
@@ -198,7 +201,7 @@ func (es *enrollmentService) GetMyEnrollments(userId uint, req *dto.GetMyEnrollm
 		page = req.Page
 	}
 	if req.Limit > 0 {
-		page = req.Limit
+		limit = req.Limit
 	}
 
 	offset := (page - 1) * limit
@@ -215,16 +218,45 @@ func (es *enrollmentService) GetMyEnrollments(userId uint, req *dto.GetMyEnrollm
 		return nil, utils.WrapError(err, "Failed to get enrollments", utils.ErrCodeInternal)
 	}
 
-	// Convert to DTO
+	// Convert to DTO with course details
 	enrollmentItems := make([]dto.EnrollmentItem, len(enrollments))
 	for i, enrollment := range enrollments {
-		// TODO: Load course info and progress
+		// Load course info
+		course, err := es.courseRepo.FindById(enrollment.CourseId)
+		if err != nil {
+			// Nếu course không tìm thấy, skip hoặc trả về thông tin cơ bản
+			enrollmentItems[i] = dto.EnrollmentItem{
+				Id:                 enrollment.Id,
+				CourseId:           enrollment.CourseId,
+				CourseTitle:        "Course not found",
+				CourseThumbnail:    "",
+				InstructorName:     "",
+				EnrolledAt:         enrollment.EnrolledAt,
+				ProgressPercentage: enrollment.ProgressPercentage,
+				Status:             enrollment.Status,
+				TotalLessons:       0,
+				CompletedLessons:   0,
+			}
+			continue
+		}
+
+		// Count completed lessons
+		completedLessons := 0
+		if es.progressRepo != nil {
+			completedLessons, _ = es.progressRepo.CountCompletedLessons(userId, enrollment.CourseId)
+		}
+
 		enrollmentItems[i] = dto.EnrollmentItem{
 			Id:                 enrollment.Id,
 			CourseId:           enrollment.CourseId,
+			CourseTitle:        course.Title,
+			CourseThumbnail:    course.ThumbnailURL,
+			InstructorName:     course.Instructor.FullName,
 			EnrolledAt:         enrollment.EnrolledAt,
 			ProgressPercentage: enrollment.ProgressPercentage,
 			Status:             enrollment.Status,
+			TotalLessons:       course.TotalLessons,
+			CompletedLessons:   completedLessons,
 		}
 	}
 
