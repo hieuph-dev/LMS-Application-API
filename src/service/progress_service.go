@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"lms/src/dto"
+	"lms/src/models"
 	"lms/src/repository"
 	"lms/src/utils"
 	"time"
@@ -148,4 +150,164 @@ func (ps *progressService) GetCourseProgress(userId, courseId uint) (*dto.GetCou
 		Status:             enrollment.Status,
 		Lessons:            lessonItems,
 	}, nil
+}
+
+func (ps *progressService) CompleteLesson(userId, lessonId uint, req *dto.CompleteLessonRequest) (*dto.CompleteLessonResponse, error) {
+	// 1. Lấy thông tin lesson
+	lessons, err := ps.lessonRepo.FindLessonByIds([]uint{lessonId})
+	if err != nil || len(lessons) == 0 {
+		return nil, utils.NewError("Lesson not found", utils.ErrCodeNotFound)
+	}
+	lesson := lessons[0]
+
+	// 2. Kiểm tra user đã enroll course chưa
+	_, isEnrolled := ps.enrollmentRepo.CheckEnrollment(userId, lesson.CourseId)
+	if !isEnrolled {
+		return nil, utils.NewError("You are not enrolled in this course", utils.ErrCodeForbidden)
+	}
+
+	// 3. Lấy hoặc tạo progress record
+	progress, err := ps.progressRepo.GetLessonProgress(userId, lessonId)
+	if err != nil {
+		return nil, utils.WrapError(err, "Failed to get lesson progress", utils.ErrCodeInternal)
+	}
+
+	// Nếu chưa có progress, tạo mới
+	if progress == nil {
+		now := time.Now()
+		progress = &models.Progress{
+			UserId:        userId,
+			LessonId:      lessonId,
+			CourseId:      lesson.CourseId,
+			IsCompleted:   true,
+			CompletedAt:   &now,
+			WatchDuration: req.WatchDuration,
+			LastPosition:  lesson.VideoDuration, // Set to end
+		}
+	} else {
+		// Cập nhật progress hiện tại
+		now := time.Now()
+		progress.IsCompleted = true
+		progress.CompletedAt = &now
+		progress.WatchDuration = req.WatchDuration
+		progress.LastPosition = lesson.VideoDuration
+	}
+
+	// 4. Lưu progress
+	if err := ps.progressRepo.UpdateProgress(progress); err != nil {
+		return nil, utils.WrapError(err, "Failed to update progress", utils.ErrCodeInternal)
+	}
+
+	// 5. Cập nhật enrollment progress percentage
+	if err := ps.updateEnrollmentProgress(userId, lesson.CourseId); err != nil {
+		// Log error nhưng không fail request
+		fmt.Printf("Failed to update enrollment progress: %v\n", err)
+	}
+
+	return &dto.CompleteLessonResponse{
+		LessonId:      lessonId,
+		CourseId:      lesson.CourseId,
+		IsCompleted:   true,
+		CompletedAt:   *progress.CompletedAt,
+		WatchDuration: progress.WatchDuration,
+		Message:       "Lesson completed successfully",
+	}, nil
+}
+
+func (ps *progressService) UpdateLessonPosition(userId, lessonId uint, req *dto.UpdateLessonPositionRequest) (*dto.UpdateLessonPositionResponse, error) {
+	// 1. Lấy thông tin lesson
+	lessons, err := ps.lessonRepo.FindLessonByIds([]uint{lessonId})
+	if err != nil || len(lessons) == 0 {
+		return nil, utils.NewError("Lesson not found", utils.ErrCodeNotFound)
+	}
+	lesson := lessons[0]
+
+	// 2. Kiểm tra user đã enroll course chưa
+	_, isEnrolled := ps.enrollmentRepo.CheckEnrollment(userId, lesson.CourseId)
+	if !isEnrolled {
+		return nil, utils.NewError("You are not enrolled in this course", utils.ErrCodeForbidden)
+	}
+
+	// 3. Validate position không vượt quá video duration
+	if req.LastPosition > lesson.VideoDuration {
+		req.LastPosition = lesson.VideoDuration
+	}
+
+	// 4. Lấy hoặc tạo progress record
+	progress, err := ps.progressRepo.GetLessonProgress(userId, lessonId)
+	if err != nil {
+		return nil, utils.WrapError(err, "Failed to get lesson progress", utils.ErrCodeInternal)
+	}
+
+	if progress == nil {
+		// Tạo mới progress
+		progress = &models.Progress{
+			UserId:        userId,
+			LessonId:      lessonId,
+			CourseId:      lesson.CourseId,
+			IsCompleted:   false,
+			WatchDuration: req.WatchDuration,
+			LastPosition:  req.LastPosition,
+		}
+	} else {
+		// Cập nhật progress hiện tại
+		progress.WatchDuration = req.WatchDuration
+		progress.LastPosition = req.LastPosition
+	}
+
+	// 5. Lưu progress
+	if err := ps.progressRepo.UpdateProgress(progress); err != nil {
+		return nil, utils.WrapError(err, "Failed to update progress", utils.ErrCodeInternal)
+	}
+
+	return &dto.UpdateLessonPositionResponse{
+		LessonId:      lessonId,
+		LastPosition:  progress.LastPosition,
+		WatchDuration: progress.WatchDuration,
+		Message:       "Video position updated successfully",
+	}, nil
+}
+
+// Tiếp theo hàm updateEnrollmentProgress
+func (ps *progressService) updateEnrollmentProgress(userId, courseId uint) error {
+	// Đếm số lessons đã hoàn thành
+	completedCount, err := ps.progressRepo.CountCompletedLessons(userId, courseId)
+	if err != nil {
+		return err
+	}
+
+	// Lấy tổng số lessons
+	lessons, err := ps.lessonRepo.GetCourseLessons(courseId)
+	if err != nil {
+		return err
+	}
+
+	totalLessons := len(lessons)
+	if totalLessons == 0 {
+		return nil
+	}
+
+	// Tính progress percentage
+	progressPercentage := float64(completedCount) / float64(totalLessons) * 100
+
+	// Cập nhật enrollment
+	enrollment, exists := ps.enrollmentRepo.CheckEnrollment(userId, courseId)
+	if !exists {
+		return fmt.Errorf("enrollment not found")
+	}
+
+	// Update enrollment progress
+	updates := map[string]interface{}{
+		"progress_percentage": progressPercentage,
+		"last_accessed_at":    time.Now(),
+	}
+
+	// Nếu hoàn thành 100%, cập nhật status
+	if progressPercentage >= 100 {
+		updates["status"] = "completed"
+		now := time.Now()
+		updates["completed_at"] = now
+	}
+
+	return ps.enrollmentRepo.UpdateEnrollmentProgress(enrollment.Id, updates)
 }

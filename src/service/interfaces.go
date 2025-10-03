@@ -2,6 +2,7 @@ package service
 
 import (
 	"lms/src/dto"
+	"lms/src/models"
 	"mime/multipart"
 )
 
@@ -81,4 +82,19 @@ type InstructorService interface {
 
 type ProgressService interface {
 	GetCourseProgress(userId, courseId uint) (*dto.GetCourseProgressResponse, error)
+	CompleteLesson(userId, lessonId uint, req *dto.CompleteLessonRequest) (*dto.CompleteLessonResponse, error)
+	UpdateLessonPosition(userId, lessonId uint, req *dto.UpdateLessonPositionRequest) (*dto.UpdateLessonPositionResponse, error)
+	updateEnrollmentProgress(userId, courseId uint) error
+}
+
+type OrderService interface {
+	CreateOrder(userId uint, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error)
+	GetOrderHistory(userId uint, req *dto.GetOrderHistoryQueryRequest) (*dto.GetOrderHistoryResponse, error)
+	completeOrder(order *models.Order, paymentMethod string) error
+	GetOrderDetail(userId uint, orderId uint) (*dto.OrderDetailResponse, error)
+	PayOrder(userId uint, orderId uint, req *dto.PayOrderRequest) (*dto.PayOrderResponse, error)
+}
+
+type CouponService interface {
+	ValidateCoupon(req *dto.ValidateCouponRequest) (*dto.ValidateCouponResponse, error)
 }

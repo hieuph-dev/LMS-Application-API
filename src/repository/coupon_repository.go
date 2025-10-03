@@ -29,6 +29,18 @@ func (cr *DBCouponRepository) FindByCode(code string) (*models.Coupon, error) {
 	return &coupon, nil
 }
 
+func (cr *DBCouponRepository) FindById(id uint) (*models.Coupon, error) {
+	var coupon models.Coupon
+	err := cr.db.Where("id = ? AND deleted_at IS NULL", id).
+		First(&coupon).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &coupon, nil
+}
+
 func (cr *DBCouponRepository) IncrementUsedCount(couponId uint) error {
 	return cr.db.Model(&models.Coupon{}).
 		Where("id = ?", couponId).

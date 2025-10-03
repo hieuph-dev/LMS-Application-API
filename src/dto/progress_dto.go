@@ -31,3 +31,30 @@ type LessonProgressItem struct {
 	LastPosition    int        `json:"last_position"`    // Vị trí cuối cùng (giây)
 	ProgressPercent float64    `json:"progress_percent"` // % hoàn thành lesson này
 }
+
+// Request để đánh dấu lesson hoàn thành
+type CompleteLessonRequest struct {
+	WatchDuration int `json:"watch_duration" binding:"required,min=0"`
+}
+
+type CompleteLessonResponse struct {
+	LessonId      uint      `json:"lesson_id"`
+	CourseId      uint      `json:"course_id"`
+	IsCompleted   bool      `json:"is_completed"`
+	CompletedAt   time.Time `json:"completed_at"`
+	WatchDuration int       `json:"watch_duration"`
+	Message       string    `json:"message"`
+}
+
+// Request để cập nhật vị trí video
+type UpdateLessonPositionRequest struct {
+	LastPosition  int `json:"last_position" binding:"required,min=0"`
+	WatchDuration int `json:"watch_duration" binding:"required,min=0"`
+}
+
+type UpdateLessonPositionResponse struct {
+	LessonId      uint   `json:"lesson_id"`
+	LastPosition  int    `json:"last_position"`
+	WatchDuration int    `json:"watch_duration"`
+	Message       string `json:"message"`
+}

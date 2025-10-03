@@ -140,3 +140,20 @@ func (lr *DBLessonRepository) GetNextLesson(courseId uint, currentOrder int) (*m
 
 	return &lesson, nil
 }
+
+func (lr *DBLessonRepository) FindLessonByIds(lessonIds []uint) ([]models.Lesson, error) {
+	var lessons []models.Lesson
+
+	if len(lessonIds) == 0 {
+		return lessons, nil
+	}
+
+	err := lr.db.Where("id IN ? AND deleted_at IS NULL", lessonIds).
+		Find(&lessons).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return lessons, nil
+}

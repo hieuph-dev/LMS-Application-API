@@ -76,3 +76,9 @@ func (er *DBEnrollmentRepository) CompleteEnrollment(enrollmentId uint) error {
 		Where("id = ?", enrollmentId).
 		Updates(updates).Error
 }
+
+func (er *DBEnrollmentRepository) UpdateEnrollmentProgress(enrollmentId uint, updates map[string]interface{}) error {
+	return er.db.Model(&models.Enrollment{}).
+		Where("id = ?", enrollmentId).
+		Updates(updates).Error
+}

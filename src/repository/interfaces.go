@@ -62,18 +62,24 @@ type LessonRepository interface {
 	GetPreviousLesson(courseId uint, currentOrder int) (*models.Lesson, error)
 	GetNextLesson(courseId uint, currentOrder int) (*models.Lesson, error)
 	FindLessonBySlugAndCourse(slug string, courseId uint) (*models.Lesson, error)
+	FindLessonByIds(lessonIds []uint) ([]models.Lesson, error)
 }
 
 type CouponRepository interface {
 	FindByCode(code string) (*models.Coupon, error)
+	FindById(id uint) (*models.Coupon, error)
 	IncrementUsedCount(couponId uint) error
 	IsValidCoupon(coupon *models.Coupon) bool
 }
 
 type OrderRepository interface {
 	Create(order *models.Order) error
+	Update(order *models.Order) error
+	FindById(orderId uint) (*models.Order, error)
 	FindByOrderCode(orderCode string) (*models.Order, error)
 	UpdatePaymentStatus(orderId uint, status string) error
+	GetUsersOrders(userId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Order, int, error)
+	FindPendingOrderByUserAndCourse(userId, courseId uint) (*models.Order, error)
 }
 
 type EnrollmentRepository interface {
@@ -81,6 +87,7 @@ type EnrollmentRepository interface {
 	CheckEnrollment(userId, courseId uint) (*models.Enrollment, bool)
 	GetUserEnrollments(userId uint, offset, limit int, filters map[string]interface{}) ([]models.Enrollment, int, error)
 	CompleteEnrollment(enrollmentId uint) error
+	UpdateEnrollmentProgress(enrollmentId uint, updates map[string]interface{}) error
 }
 
 type InstructorRepository interface {
