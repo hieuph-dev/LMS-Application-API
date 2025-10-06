@@ -108,3 +108,9 @@ type CouponService interface {
 	DeleteCoupon(couponId uint) (*dto.DeleteCouponResponse, error)
 	UpdateCoupon(couponId uint, req *dto.UpdateCouponRequest) (*dto.UpdateCouponResponse, error)
 }
+
+type AnalyticsService interface {
+	GetInstructorOverview(instructorId uint) (*dto.InstructorOverviewResponse, error)
+	GetRevenueAnalytics(instructorId uint, req *dto.RevenueAnalyticsRequest) (*dto.RevenueAnalyticsResponse, error)
+	GetStudentAnalytics(instructorId uint, req *dto.StudentAnalyticsRequest) (*dto.StudentAnalyticsResponse, error)
+}

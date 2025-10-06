@@ -15,12 +15,15 @@ type InstructorModule struct {
 func NewInstructorModule() *InstructorModule {
 	instructorRepo := repository.NewDBInstructorRepository(db.DB)
 	categoryRepo := repository.NewDBCategoryRepository(db.DB)
+	analyticsRepo := repository.NewDBAnalyticsRepository(db.DB)
 
 	instructorService := service.NewInstructorService(instructorRepo, categoryRepo)
+	analyticsService := service.NewAnalyticsService(analyticsRepo)
 
 	instructorHandler := handler.NewInstructorHandler(instructorService)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
-	instructorRoutes := routes.NewInstructorRoutes(instructorHandler)
+	instructorRoutes := routes.NewInstructorRoutes(instructorHandler, analyticsHandler)
 
 	return &InstructorModule{routes: instructorRoutes}
 }

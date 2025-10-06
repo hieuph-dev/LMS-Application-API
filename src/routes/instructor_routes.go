@@ -8,12 +8,14 @@ import (
 )
 
 type InstructorRoutes struct {
-	handler *handler.InstructorHandler
+	handler          *handler.InstructorHandler
+	analyticsHandler *handler.AnalyticsHandler
 }
 
-func NewInstructorRoutes(handler *handler.InstructorHandler) *InstructorRoutes {
+func NewInstructorRoutes(handler *handler.InstructorHandler, analyticsHandler *handler.AnalyticsHandler) *InstructorRoutes {
 	return &InstructorRoutes{
-		handler: handler,
+		handler:          handler,
+		analyticsHandler: analyticsHandler,
 	}
 }
 
@@ -36,6 +38,14 @@ func (ir *InstructorRoutes) Register(r *gin.RouterGroup) {
 			instructor.PUT("/courses/:course_id/lessons/:id", ir.handler.UpdateLesson)
 			instructor.DELETE("/courses/:course_id/lessons/:id", ir.handler.DeleteLesson)
 			instructor.PUT("/lessons/:id/reorder", ir.handler.ReorderLessons)
+
+			// Analytics endpoints
+			analytics := instructor.Group("/analytics")
+			{
+				analytics.GET("/overview", ir.analyticsHandler.GetInstructorOverview)
+				analytics.GET("/revenue", ir.analyticsHandler.GetRevenueAnalytics)
+				analytics.GET("/students", ir.analyticsHandler.GetStudentAnalytics)
+			}
 		}
 	}
 }

@@ -134,3 +134,9 @@ type ProgressRepository interface {
 	UpdateProgress(progress *models.Progress) error
 	GetLessonProgress(userId, lessonId uint) (*models.Progress, error)
 }
+
+type AnalyticsRepository interface {
+	GetInstructorOverview(instructorId uint) (*dto.InstructorOverviewResponse, error)
+	GetRevenueAnalytics(instructorId uint, req *dto.RevenueAnalyticsRequest) (*dto.RevenueAnalyticsResponse, error)
+	GetStudentAnalytics(instructorId uint, req *dto.StudentAnalyticsRequest) (*dto.StudentAnalyticsResponse, error)
+}
