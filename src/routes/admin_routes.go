@@ -8,14 +8,20 @@ import (
 )
 
 type AdminRoutes struct {
-	handler       *handler.AdminHandler
-	couponHandler *handler.CouponHandler // Thêm dòng này
+	handler               *handler.AdminHandler
+	couponHandler         *handler.CouponHandler
+	adminAnalyticsHandler *handler.AdminAnalyticsHandler
 }
 
-func NewAdminRoutes(handler *handler.AdminHandler, couponHandler *handler.CouponHandler) *AdminRoutes {
+func NewAdminRoutes(
+	handler *handler.AdminHandler,
+	couponHandler *handler.CouponHandler,
+	adminAnalyticsHandler *handler.AdminAnalyticsHandler,
+) *AdminRoutes {
 	return &AdminRoutes{
-		handler:       handler,
-		couponHandler: couponHandler,
+		handler:               handler,
+		couponHandler:         couponHandler,
+		adminAnalyticsHandler: adminAnalyticsHandler,
 	}
 }
 
@@ -41,11 +47,20 @@ func (ar *AdminRoutes) Register(r *gin.RouterGroup) {
 			admin.GET("orders", ar.handler.GetAllOrders)
 			admin.PUT("orders/:id/status", ar.handler.UpdateOrderStatus)
 
-			// Coupon management - THÊM PHẦN NÀY
+			// Coupon management
 			admin.GET("/coupons", ar.couponHandler.GetAdminCoupons)
 			admin.POST("/coupons", ar.couponHandler.CreateCoupon)
 			admin.PUT("/coupons/:id", ar.couponHandler.UpdateCoupon)
 			admin.DELETE("/coupons/:id", ar.couponHandler.DeleteCoupon)
+
+			// Admin Analytics endpoints
+			analytics := admin.Group("/analytics")
+			{
+				analytics.GET("/dashboard", ar.adminAnalyticsHandler.GetAdminDashboard)
+				analytics.GET("/revenue", ar.adminAnalyticsHandler.GetAdminRevenueAnalytics)
+				analytics.GET("/users", ar.adminAnalyticsHandler.GetAdminUsersAnalytics)
+				analytics.GET("/courses", ar.adminAnalyticsHandler.GetAdminCoursesAnalytics)
+			}
 		}
 	}
 }

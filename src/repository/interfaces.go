@@ -140,3 +140,11 @@ type AnalyticsRepository interface {
 	GetRevenueAnalytics(instructorId uint, req *dto.RevenueAnalyticsRequest) (*dto.RevenueAnalyticsResponse, error)
 	GetStudentAnalytics(instructorId uint, req *dto.StudentAnalyticsRequest) (*dto.StudentAnalyticsResponse, error)
 }
+
+// Thêm interface này vào file interfaces.go
+type AdminAnalyticsRepository interface {
+	GetAdminDashboard() (*dto.AdminDashboardResponse, error)
+	GetAdminRevenueAnalytics(req *dto.AdminRevenueAnalyticsRequest) (*dto.AdminRevenueAnalyticsResponse, error)
+	GetAdminUsersAnalytics(req *dto.AdminUsersAnalyticsRequest) (*dto.AdminUsersAnalyticsResponse, error)
+	GetAdminCoursesAnalytics(req *dto.AdminCoursesAnalyticsRequest) (*dto.AdminCoursesAnalyticsResponse, error)
+}
