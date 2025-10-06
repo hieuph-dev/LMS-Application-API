@@ -72,3 +72,65 @@ func (cr *DBCouponRepository) IsValidCoupon(coupon *models.Coupon) bool {
 
 	return true
 }
+
+func (cr *DBCouponRepository) GetCouponsWithPagination(offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Coupon, int, error) {
+	var coupons []models.Coupon
+	var total int64
+
+	query := cr.db.Model(&models.Coupon{}).Where("deleted_at IS NULL")
+
+	// Apply filters
+	if isActive, ok := filters["is_active"].(bool); ok {
+		query = query.Where("is_active = ?", isActive)
+	}
+
+	if searchCode, ok := filters["search_code"].(string); ok && searchCode != "" {
+		query = query.Where("code LIKE ?", "%"+searchCode+"%")
+	}
+
+	// Count total
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply ordering
+	if orderBy != "" && sortBy != "" {
+		query = query.Order(orderBy + " " + sortBy)
+	} else {
+		query = query.Order("created_at DESC")
+	}
+
+	// Apply pagination
+	if err := query.Offset(offset).Limit(limit).Find(&coupons).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return coupons, int(total), nil
+}
+
+func (cr *DBCouponRepository) Create(coupon *models.Coupon) error {
+	return cr.db.Create(coupon).Error
+}
+
+func (cr *DBCouponRepository) Update(couponId uint, updates map[string]interface{}) error {
+	return cr.db.Model(&models.Coupon{}).
+		Where("id = ? AND deleted_at IS NULL", couponId).
+		Updates(updates).Error
+}
+
+func (cr *DBCouponRepository) Delete(couponId uint) error {
+	return cr.db.Where("id = ?", couponId).
+		Delete(&models.Coupon{}).Error
+}
+
+func (cr *DBCouponRepository) FindByCodeExcept(code string, excludeId uint) (*models.Coupon, bool) {
+	var coupon models.Coupon
+	err := cr.db.Where("code = ? AND id != ? AND deleted_at IS NULL", code, excludeId).
+		First(&coupon).Error
+
+	if err != nil {
+		return nil, false
+	}
+
+	return &coupon, true
+}

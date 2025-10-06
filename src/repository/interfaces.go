@@ -52,6 +52,12 @@ type CourseRepository interface {
 type ReviewRepository interface {
 	GetCourseReviews(courseId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Review, int, error)
 	GetCourseReviewStats(courseId uint) (*dto.ReviewStats, error)
+	FindByUserAndCourse(userId, courseId uint) (*models.Review, error)
+	Create(review *models.Review) error
+	FindById(reviewId uint) (*models.Review, error)
+	UpdateCourseRatingStats(courseId uint) error
+	Delete(reviewId uint) error
+	Update(reviewId uint, updates map[string]interface{}) error
 }
 
 type LessonRepository interface {
@@ -70,6 +76,11 @@ type CouponRepository interface {
 	FindById(id uint) (*models.Coupon, error)
 	IncrementUsedCount(couponId uint) error
 	IsValidCoupon(coupon *models.Coupon) bool
+	FindByCodeExcept(code string, excludeId uint) (*models.Coupon, bool)
+	Delete(couponId uint) error
+	Update(couponId uint, updates map[string]interface{}) error
+	Create(coupon *models.Coupon) error
+	GetCouponsWithPagination(offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Coupon, int, error)
 }
 
 type OrderRepository interface {
@@ -80,11 +91,15 @@ type OrderRepository interface {
 	UpdatePaymentStatus(orderId uint, status string) error
 	GetUsersOrders(userId uint, offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Order, int, error)
 	FindPendingOrderByUserAndCourse(userId, courseId uint) (*models.Order, error)
+	GetAllOrders(offset, limit int, filters map[string]interface{}, orderBy, sortBy string) ([]models.Order, int, error)
+	UpdateOrderStatus(orderId uint, status string) error
+	GetOrderStatistics(filters map[string]interface{}) (*dto.OrderStatistics, error)
 }
 
 type EnrollmentRepository interface {
 	Create(enrollment *models.Enrollment) error
 	CheckEnrollment(userId, courseId uint) (*models.Enrollment, bool)
+	CheckUserEnrollment(userId, courseId uint) (bool, error)
 	GetUserEnrollments(userId uint, offset, limit int, filters map[string]interface{}) ([]models.Enrollment, int, error)
 	CompleteEnrollment(enrollmentId uint) error
 	UpdateEnrollmentProgress(enrollmentId uint, updates map[string]interface{}) error

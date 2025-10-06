@@ -10,7 +10,9 @@ import (
 type Order struct {
 	Id             uint           `gorm:"primaryKey" json:"id"`
 	UserId         uint           `json:"user_id"`
+	User           User           `gorm:"foreignKey:UserId" json:"user"` // ✅ THÊM NẾU CHƯA CÓ
 	CourseId       uint           `json:"course_id"`
+	Course         Course         `gorm:"foreignKey:CourseId" json:"course"` // ✅ THÊM NẾU CHƯA CÓ
 	OrderCode      string         `gorm:"uniqueIndex;size:50;not null" json:"order_code"`
 	OriginalPrice  float64        `gorm:"not null" json:"original_price"`
 	DiscountAmount float64        `gorm:"default:0" json:"discount_amount"`

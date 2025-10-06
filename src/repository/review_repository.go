@@ -96,3 +96,63 @@ func (rr *DBReviewRepository) GetCourseReviewStats(courseId uint) (*dto.ReviewSt
 
 	return &stats, nil
 }
+
+func (rr *DBReviewRepository) FindByUserAndCourse(userId, courseId uint) (*models.Review, error) {
+	var review models.Review
+	err := rr.db.Where("user_id = ? AND course_id = ? AND deleted_at IS NULL", userId, courseId).
+		First(&review).Error
+	if err != nil {
+		return nil, err
+	}
+	return &review, nil
+}
+
+func (rr *DBReviewRepository) Create(review *models.Review) error {
+	return rr.db.Create(review).Error
+}
+
+func (rr *DBReviewRepository) FindById(reviewId uint) (*models.Review, error) {
+	var review models.Review
+	err := rr.db.Preload("User").Preload("Course").
+		Where("id = ? AND deleted_at IS NULL", reviewId).
+		First(&review).Error
+	if err != nil {
+		return nil, err
+	}
+	return &review, nil
+}
+
+func (rr *DBReviewRepository) Update(reviewId uint, updates map[string]interface{}) error {
+	return rr.db.Model(&models.Review{}).
+		Where("id = ?", reviewId).
+		Updates(updates).Error
+}
+
+func (rr *DBReviewRepository) Delete(reviewId uint) error {
+	return rr.db.Where("id = ?", reviewId).Delete(&models.Review{}).Error
+}
+
+func (rr *DBReviewRepository) UpdateCourseRatingStats(courseId uint) error {
+	// Calculate average rating and count
+	var stats struct {
+		AvgRating float32
+		Count     int64
+	}
+
+	err := rr.db.Model(&models.Review{}).
+		Select("AVG(rating) as avg_rating, COUNT(*) as count").
+		Where("course_id = ? AND is_published = true AND deleted_at IS NULL", courseId).
+		Scan(&stats).Error
+
+	if err != nil {
+		return err
+	}
+
+	// Update course
+	return rr.db.Model(&models.Course{}).
+		Where("id = ?", courseId).
+		Updates(map[string]interface{}{
+			"rating_avg":   stats.AvgRating,
+			"rating_count": stats.Count,
+		}).Error
+}

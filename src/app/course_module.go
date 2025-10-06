@@ -15,9 +15,10 @@ type CourseModule struct {
 func NewCourseModule() *CourseModule {
 	courseRepo := repository.NewDBCourseRepository(db.DB)
 	reviewRepo := repository.NewDBReviewRepository(db.DB)
+	enrollmentRepo := repository.NewDBEnrollmentRepository(db.DB)
 
 	courseService := service.NewCourseService(courseRepo)
-	reviewService := service.NewReviewService(reviewRepo, courseRepo)
+	reviewService := service.NewReviewService(reviewRepo, courseRepo, enrollmentRepo)
 
 	courseHandler := handler.NewCourseHandler(courseService, reviewService)
 

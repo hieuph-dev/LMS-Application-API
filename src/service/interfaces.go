@@ -55,6 +55,9 @@ type CourseService interface {
 
 type ReviewService interface {
 	GetCourseReviews(courseId uint, req *dto.GetCourseReviewsQueryRequest) (*dto.GetCourseReviewsResponse, error)
+	CreateReview(userId, courseId uint, req *dto.CreateReviewRequest) (*dto.CreateReviewResponse, error)
+	UpdateReview(userId, reviewId uint, req *dto.UpdateReviewRequest) (*dto.UpdateReviewResponse, error)
+	DeleteReview(userId, reviewId uint) (*dto.DeleteReviewResponse, error)
 }
 
 type LessonService interface {
@@ -93,8 +96,15 @@ type OrderService interface {
 	completeOrder(order *models.Order, paymentMethod string) error
 	GetOrderDetail(userId uint, orderId uint) (*dto.OrderDetailResponse, error)
 	PayOrder(userId uint, orderId uint, req *dto.PayOrderRequest) (*dto.PayOrderResponse, error)
+	UpdateOrderStatus(orderId uint, req *dto.UpdateOrderStatusRequest) (*dto.UpdateOrderStatusResponse, error)
+	GetAllOrders(req *dto.GetAdminOrdersQueryRequest) (*dto.GetAdminOrdersResponse, error)
 }
 
 type CouponService interface {
 	ValidateCoupon(req *dto.ValidateCouponRequest) (*dto.ValidateCouponResponse, error)
+	GetAdminCoupons(req *dto.GetAdminCouponsQueryRequest) (*dto.GetAdminCouponsResponse, error)
+	CheckCoupon(req *dto.CheckCouponRequest) (*dto.CheckCouponResponse, error)
+	CreateCoupon(req *dto.CreateCouponRequest) (*dto.CreateCouponResponse, error)
+	DeleteCoupon(couponId uint) (*dto.DeleteCouponResponse, error)
+	UpdateCoupon(couponId uint, req *dto.UpdateCouponRequest) (*dto.UpdateCouponResponse, error)
 }

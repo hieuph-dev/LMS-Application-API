@@ -356,3 +356,217 @@ func (os *orderService) PayOrder(userId uint, orderId uint, req *dto.PayOrderReq
 		Message:       "Payment successful! You have been enrolled in the course",
 	}, nil
 }
+
+func (os *orderService) GetAllOrders(req *dto.GetAdminOrdersQueryRequest) (*dto.GetAdminOrdersResponse, error) {
+	// Set defaults
+	page := 1
+	limit := 20
+	orderBy := "created_at"
+	sortBy := "desc"
+
+	if req.Page > 0 {
+		page = req.Page
+	}
+	if req.Limit > 0 && req.Limit <= 100 {
+		limit = req.Limit
+	}
+	if req.OrderBy != "" {
+		orderBy = req.OrderBy
+	}
+	if req.SortBy != "" {
+		sortBy = req.SortBy
+	}
+
+	offset := (page - 1) * limit
+
+	// Prepare filters
+	filters := make(map[string]interface{})
+	if req.UserId != nil {
+		filters["user_id"] = *req.UserId
+	}
+	if req.CourseId != nil {
+		filters["course_id"] = *req.CourseId
+	}
+	if req.PaymentStatus != "" {
+		filters["payment_status"] = req.PaymentStatus
+	}
+	if req.PaymentMethod != "" {
+		filters["payment_method"] = req.PaymentMethod
+	}
+	if req.Search != "" {
+		filters["search"] = req.Search
+	}
+	if req.DateFrom != "" {
+		if dateFrom, err := time.Parse("2006-01-02", req.DateFrom); err == nil {
+			filters["date_from"] = dateFrom
+		}
+	}
+	if req.DateTo != "" {
+		if dateTo, err := time.Parse("2006-01-02", req.DateTo); err == nil {
+			// Set to end of day
+			dateTo = dateTo.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			filters["date_to"] = dateTo
+		}
+	}
+
+	// Get orders
+	orders, total, err := os.orderRepo.GetAllOrders(offset, limit, filters, orderBy, sortBy)
+	if err != nil {
+		return nil, utils.WrapError(err, "Failed to get orders", utils.ErrCodeInternal)
+	}
+
+	// Get statistics
+	statistics, err := os.orderRepo.GetOrderStatistics(filters)
+	if err != nil {
+		// Log error but don't fail the request
+		statistics = &dto.OrderStatistics{}
+	}
+
+	// Convert to DTO
+	orderItems := make([]dto.AdminOrderItem, len(orders))
+	for i, order := range orders {
+		// Get user info
+		username := ""
+		userEmail := ""
+		if order.User.Id != 0 {
+			username = order.User.Username
+			userEmail = order.User.Email
+		}
+
+		// Get course info
+		courseTitle := "Course not found"
+		courseThumbnail := ""
+		instructorName := ""
+		if order.Course.Id != 0 {
+			courseTitle = order.Course.Title
+			courseThumbnail = order.Course.ThumbnailURL
+			if order.Course.Instructor.Id != 0 {
+				instructorName = order.Course.Instructor.FullName
+			}
+		}
+
+		// Get coupon code
+		couponCode := ""
+		if order.CouponId != nil {
+			if coupon, err := os.couponRepo.FindById(*order.CouponId); err == nil {
+				couponCode = coupon.Code
+			}
+		}
+
+		orderItems[i] = dto.AdminOrderItem{
+			Id:              order.Id,
+			OrderCode:       order.OrderCode,
+			UserId:          order.UserId,
+			Username:        username,
+			UserEmail:       userEmail,
+			CourseId:        order.CourseId,
+			CourseTitle:     courseTitle,
+			CourseThumbnail: courseThumbnail,
+			InstructorName:  instructorName,
+			OriginalPrice:   order.OriginalPrice,
+			DiscountAmount:  order.DiscountAmount,
+			FinalPrice:      order.FinalPrice,
+			CouponCode:      couponCode,
+			PaymentMethod:   order.PaymentMethod,
+			PaymentStatus:   order.PaymentStatus,
+			PaidAt:          order.PaidAt,
+			CreatedAt:       order.CreatedAt,
+			UpdatedAt:       order.UpdatedAt,
+		}
+	}
+
+	// Calculate pagination
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	pagination := dto.PaginationInfo{
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+	}
+
+	return &dto.GetAdminOrdersResponse{
+		Orders:     orderItems,
+		Pagination: pagination,
+		Statistics: *statistics,
+	}, nil
+}
+
+func (os *orderService) UpdateOrderStatus(orderId uint, req *dto.UpdateOrderStatusRequest) (*dto.UpdateOrderStatusResponse, error) {
+	// 1. Find order
+	order, err := os.orderRepo.FindById(orderId)
+	if err != nil {
+		return nil, utils.NewError("Order not found", utils.ErrCodeNotFound)
+	}
+
+	// 2. Validate status change
+	if order.PaymentStatus == req.Status {
+		return nil, utils.NewError(
+			fmt.Sprintf("Order already has status: %s", req.Status),
+			utils.ErrCodeBadRequest,
+		)
+	}
+
+	// 3. Business logic validation
+	// Không cho phép thay đổi từ paid sang pending
+	if order.PaymentStatus == "paid" && req.Status == "pending" {
+		return nil, utils.NewError("Cannot change paid order back to pending", utils.ErrCodeBadRequest)
+	}
+
+	// Không cho phép thay đổi từ cancelled/failed sang paid
+	if (order.PaymentStatus == "cancelled" || order.PaymentStatus == "failed") && req.Status == "paid" {
+		return nil, utils.NewError(
+			fmt.Sprintf("Cannot change %s order to paid. Pleasse create a new order", order.PaymentStatus),
+			utils.ErrCodeBadRequest,
+		)
+	}
+
+	// 4. Handle status change to 'paid'
+	if req.Status == "paid" {
+		// Create enrollment if not exists
+		if _, exists := os.enrollmentRepo.CheckEnrollment(order.UserId, order.CourseId); !exists {
+			enrollment := &models.Enrollment{
+				UserId:             order.UserId,
+				CourseId:           order.CourseId,
+				EnrolledAt:         time.Now(),
+				ProgressPercentage: 0,
+				Status:             "active",
+			}
+
+			if err := os.enrollmentRepo.Create(enrollment); err != nil {
+				return nil, utils.WrapError(err, "Failed to create enrollment", utils.ErrCodeInternal)
+			}
+		}
+
+		// Increment coupon used count
+		if order.CouponId != nil {
+			os.couponRepo.IncrementUsedCount(*order.CouponId)
+		}
+	}
+
+	// 5. Update order status
+	if err := os.orderRepo.UpdateOrderStatus(orderId, req.Status); err != nil {
+		return nil, utils.WrapError(err, "Failed to update order status", utils.ErrCodeInternal)
+	}
+
+	// 6. Get updated order
+	updatedOrder, err := os.orderRepo.FindById(orderId)
+	if err != nil {
+		return nil, utils.WrapError(err, "Failed to get updated order", utils.ErrCodeInternal)
+	}
+
+	// 7. Build message
+	message := fmt.Sprintf("Order status changed from '%s' to '%s'", order.PaymentStatus, req.Status)
+	if req.Reason != "" {
+		message += fmt.Sprintf(". Reason: %s", req.Reason)
+	}
+
+	return &dto.UpdateOrderStatusResponse{
+		Id:            updatedOrder.Id,
+		OrderCode:     updatedOrder.OrderCode,
+		PaymentStatus: updatedOrder.PaymentStatus,
+		UpdatedAt:     updatedOrder.UpdatedAt,
+		Message:       message,
+	}, nil
+}

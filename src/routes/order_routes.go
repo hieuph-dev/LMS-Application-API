@@ -37,12 +37,16 @@ func (or *OrderRoutes) Register(r *gin.RouterGroup) {
 		}
 	}
 
-	// Coupon routes
+	// Coupon routes - PUBLIC (check) + ADMIN (validate)
 	coupons := r.Group("/coupons")
 	{
+		// Public endpoint - không cần authentication
+		// coupons.POST("/check", or.handler.CheckCoupon)
+
+		// Protected endpoint - cần authentication
 		coupons.Use(middleware.AuthMiddleware())
 		{
-			// Validate coupon
+			// Validate coupon (for order creation)
 			coupons.POST("/validate", or.handler.ValidateCoupon)
 		}
 

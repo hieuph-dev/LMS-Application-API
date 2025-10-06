@@ -12,12 +12,14 @@ import (
 )
 
 type AdminHandler struct {
-	service service.AdminService
+	service      service.AdminService
+	orderService service.OrderService
 }
 
-func NewAdminHandler(service service.AdminService) *AdminHandler {
+func NewAdminHandler(service service.AdminService, orderService service.OrderService) *AdminHandler {
 	return &AdminHandler{
-		service: service,
+		service:      service,
+		orderService: orderService,
 	}
 }
 
@@ -228,6 +230,58 @@ func (ah *AdminHandler) ChangeCourseStatus(ctx *gin.Context) {
 
 	// Gọi service để thay đổi status
 	response, err := ah.service.ChangeCourseStatus(uint(courseId), &req)
+	if err != nil {
+		utils.ResponseError(ctx, err)
+		return
+	}
+
+	utils.ResponseSuccess(ctx, http.StatusOK, response)
+}
+
+// GET /api/v1/admin/orders - Lấy tất cả orders (Admin)
+func (ah *AdminHandler) GetAllOrders(ctx *gin.Context) {
+	// Parse query parameters
+	var req dto.GetAdminOrdersQueryRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		utils.ResponseValidator(ctx, validation.HandlerValidationErrors(err))
+		return
+	}
+
+	// Gọi service để lấy orders
+	response, err := ah.orderService.GetAllOrders(&req)
+	if err != nil {
+		utils.ResponseError(ctx, err)
+		return
+	}
+
+	utils.ResponseSuccess(ctx, http.StatusOK, response)
+}
+
+// PUT /api/v1/admin/orders/:id/status - Cập nhật trạng thái order (Admin)
+func (ah *AdminHandler) UpdateOrderStatus(ctx *gin.Context) {
+	// Lấy order ID từ URL parameter
+	orderIdParam := ctx.Param("id")
+	if orderIdParam == "" {
+		utils.ResponseError(ctx, utils.NewError("Order Id is required", utils.ErrCodeBadRequest))
+		return
+	}
+
+	// Convert string to uint
+	orderId, err := strconv.ParseUint(orderIdParam, 10, 32)
+	if err != nil {
+		utils.ResponseError(ctx, utils.NewError("Invalid order Id format", utils.ErrCodeBadRequest))
+		return
+	}
+
+	// Parse request body
+	var req dto.UpdateOrderStatusRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.ResponseValidator(ctx, validation.HandlerValidationErrors(err))
+		return
+	}
+
+	// Gọi service để update order status
+	response, err := ah.orderService.UpdateOrderStatus(uint(orderId), &req)
 	if err != nil {
 		utils.ResponseError(ctx, err)
 		return

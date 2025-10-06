@@ -8,12 +8,14 @@ import (
 )
 
 type AdminRoutes struct {
-	handler *handler.AdminHandler
+	handler       *handler.AdminHandler
+	couponHandler *handler.CouponHandler // Thêm dòng này
 }
 
-func NewAdminRoutes(handler *handler.AdminHandler) *AdminRoutes {
+func NewAdminRoutes(handler *handler.AdminHandler, couponHandler *handler.CouponHandler) *AdminRoutes {
 	return &AdminRoutes{
-		handler: handler,
+		handler:       handler,
+		couponHandler: couponHandler,
 	}
 }
 
@@ -34,6 +36,16 @@ func (ar *AdminRoutes) Register(r *gin.RouterGroup) {
 			// Course management
 			admin.GET("/courses", ar.handler.GetCourses)
 			admin.PUT("/courses/:course_id/status", ar.handler.ChangeCourseStatus)
+
+			// Order management
+			admin.GET("orders", ar.handler.GetAllOrders)
+			admin.PUT("orders/:id/status", ar.handler.UpdateOrderStatus)
+
+			// Coupon management - THÊM PHẦN NÀY
+			admin.GET("/coupons", ar.couponHandler.GetAdminCoupons)
+			admin.POST("/coupons", ar.couponHandler.CreateCoupon)
+			admin.PUT("/coupons/:id", ar.couponHandler.UpdateCoupon)
+			admin.DELETE("/coupons/:id", ar.couponHandler.DeleteCoupon)
 		}
 	}
 }

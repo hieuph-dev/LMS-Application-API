@@ -16,15 +16,21 @@ func NewAdminModule() *AdminModule {
 	// Tạo repository để tương tác với database
 	userRepo := repository.NewDBUserRepository(db.DB)
 	courseRepo := repository.NewDBCourseRepository(db.DB)
+	orderRepo := repository.NewDBOrderRepository(db.DB)
+	couponRepo := repository.NewDBCouponRepository(db.DB)
+	enrollmentRepo := repository.NewDBEnrollmentRepository(db.DB)
 
 	// Tạo service chứa business logic
 	adminService := service.NewAdminService(userRepo, courseRepo)
+	orderService := service.NewOrderService(orderRepo, courseRepo, couponRepo, enrollmentRepo)
+	couponService := service.NewCouponService(couponRepo, courseRepo)
 
 	// Tạo handler xử lý HTTP requests
-	adminHandler := handler.NewAdminHandler(adminService)
+	adminHandler := handler.NewAdminHandler(adminService, orderService)
+	couponHandler := handler.NewCouponHandler(couponService)
 
 	// Tạo routes định nghĩa các endpoint
-	adminRoutes := routes.NewAdminRoutes(adminHandler)
+	adminRoutes := routes.NewAdminRoutes(adminHandler, couponHandler)
 
 	return &AdminModule{routes: adminRoutes}
 }

@@ -82,3 +82,17 @@ func (er *DBEnrollmentRepository) UpdateEnrollmentProgress(enrollmentId uint, up
 		Where("id = ?", enrollmentId).
 		Updates(updates).Error
 }
+
+func (er *DBEnrollmentRepository) CheckUserEnrollment(userId, courseId uint) (bool, error) {
+	var count int64
+	err := er.db.Model(&models.Enrollment{}).
+		Where("user_id = ? AND course_id = ? AND status = ? AND deleted_at IS NULL",
+			userId, courseId, "active").
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
